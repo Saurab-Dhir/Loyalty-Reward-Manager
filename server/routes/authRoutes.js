@@ -8,6 +8,7 @@ const router = express.Router();
 
 mongodb_uri = process.env.MONGODB_URI;
 token_secret = process.env.TOKEN_SECRET;
+
 // Check if the environment variables are provided
 if (!mongodb_uri || !token_secret) {
   throw new Error(
@@ -22,10 +23,6 @@ client.connect().catch((err) => {
   return;
 });
 
-router.get("/", (req, res) => {
-  res.send("Hello World");
-});
-
 router.post("/login", async (req, res) => {
   try {
     const password = req.body.password;
@@ -38,13 +35,11 @@ router.post("/login", async (req, res) => {
 
     const user = await usersCollection.findOne({ email: email });
     // Check if the user exists
-    if (!user) {
-      return res.status(404).send("User not found");
-    }
+    if (!user) throw new Error("User not found");
+
     // Check if the password is correct with bcrypt
-    if (!(await bcrypt.compare(password, user.password))) {
-      return res.status(400).send("Invalid password");
-    }
+    if (!(await bcrypt.compare(password, user.password)))
+      throw new Error("Invalid password");
 
     // Create a token with jwt
     const token = jwt.sign(
@@ -72,7 +67,6 @@ router.post("/register", async (req, res) => {
     const password = req.body.password;
     const email = req.body.email;
     const name = req.body.name;
-    // TODO:?? Validate the data before creating a user
 
     // Hash the password with the bcrypt package
     const salt = await bcrypt.genSalt(10);
@@ -95,6 +89,7 @@ router.post("/register", async (req, res) => {
       email: email,
       name: name,
     });
+
     if (existingUser) throw new Error("User already exists");
 
     // Insert the user into the database
@@ -104,9 +99,7 @@ router.post("/register", async (req, res) => {
     if (result.acknowledged) {
       const { password, ...data } = result;
       return res.status(201).send(data);
-    } else {
-      throw new Error("User not created");
-    }
+    } else throw new Error("User not created");
   } catch (err) {
     console.error(err);
     res.status(400).send(err instanceof Error ? err.message : "Unknown error");
@@ -138,9 +131,8 @@ router.get("/user", async (req, res) => {
     const user = await usersCollection.findOne({
       _id: new ObjectId(claims._id),
     });
-    if (!user) {
-      throw new Error("User not found");
-    }
+    if (!user) throw new Error("User not found");
+
     const { password, ...data } = user;
     return res.send(data);
   } catch (err) {

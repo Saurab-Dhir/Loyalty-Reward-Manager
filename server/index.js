@@ -2,7 +2,7 @@
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const express = require("express");
-const routes = require("./routes/routes");
+const authRoutes = require("./routes/authRoutes");
 
 //Creating an instance of express
 const app = express();
@@ -17,7 +17,7 @@ app.use(
 app.use(express.json());
 
 //Getting the routes from the routes file
-app.use("/api", routes);
+app.use("/api", authRoutes);
 
 //Listening on port 3000
 app.listen(3000, () => {
